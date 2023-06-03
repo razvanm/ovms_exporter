@@ -91,7 +91,7 @@ var dMetrics = []string{
 	"ms_v_env_temp",            // 11	StandardMetrics.ms_v_env_temp->AsString("0")
 	"doors3",                   // 12	(int)Doors3()
 	"stale_temps",              // 13	(stale_temps ? "0" : "1")
-	"ms_v_env_temp",            // 14	(StandardMetrics.ms_v_env_temp->IsStale() ? "0" : "1")
+	"ms_v_env_temp_indicator",  // 14	(StandardMetrics.ms_v_env_temp->IsStale() ? "0" : "1")
 	"ms_v_bat_12v_voltage",     // 15	StandardMetrics.ms_v_bat_12v_voltage->AsString("0")
 	"doors4",                   // 16	(int)Doors4()
 	"ms_v_bat_12v_voltage_ref", // 17	StandardMetrics.ms_v_bat_12v_voltage_ref->AsString("0")
@@ -125,23 +125,23 @@ var lMetrics = []string{
 }
 
 // Reference: https://github.com/openvehicles/Open-Vehicle-Monitoring-System-3/blob/0f16f531cb7dac8aa3d256fe3f42fde4da52000f/vehicle/OVMS.V3/components/ovms_server_v2/src/ovms_server_v2.cpp#L1298-L1326
-var wMetrics = []string{
+var yMetrics = []string{
 	"wheels_count",             //  1	wheels.size();
 	"wheel1",                   //  2	wheel1
 	"wheel2",                   //  3	wheel2
 	"wheel3",                   //  4	wheel3
 	"wheel4",                   //  5	wheel4
 	"ms_v_tpms_pressure_count", //  6	StandardMetrics.ms_v_tpms_pressure->GetSize()
-	"ms_v_tpms_pressure",       //  7	StandardMetrics.ms_v_tpms_pressure->AsString("", kPa, 1)
-	"defstale_pressure",        //  8	defstale_pressure
-	"ms_v_tpms_temp_count",     //  9	StandardMetrics.ms_v_tpms_temp->GetSize()
-	"ms_v_tpms_temp",           // 10	StandardMetrics.ms_v_tpms_temp->AsString("", Celcius, 1)
-	"defstale_temp",            // 11	defstale_temp
-	"ms_v_tpms_health_count",   // 12	StandardMetrics.ms_v_tpms_health->GetSize()
-	"ms_v_tpms_health",         // 13	StandardMetrics.ms_v_tpms_health->AsString("", Percentage, 1)
-	"defstale_health",          // 14	defstale_health
-	"ms_v_tpms_alert_count",    // 15	StandardMetrics.ms_v_tpms_alert->GetSize()
-	"ms_v_tpms_alert",          // 16	StandardMetrics.ms_v_tpms_alert->AsString("")
+	"ms_v_tpms_pressure_whee1", //  7	StandardMetrics.ms_v_tpms_pressure->AsString("", kPa, 1)
+	"ms_v_tpms_pressure_whee2", //  8	StandardMetrics.ms_v_tpms_pressure->AsString("", kPa, 1)
+	"ms_v_tpms_pressure_whee3", //  9	StandardMetrics.ms_v_tpms_pressure->AsString("", kPa, 1)
+	"ms_v_tpms_pressure_whee4", // 10	StandardMetrics.ms_v_tpms_pressure->AsString("", kPa, 1)
+	"defstale_pressure",        // 11	defstale_pressure
+	"ms_v_tpms_temp_count",     // 12	StandardMetrics.ms_v_tpms_temp->GetSize()
+	"defstale_temp",            // 13	defstale_temp
+	"ms_v_tpms_health_count",   // 14	StandardMetrics.ms_v_tpms_health->GetSize()
+	"defstale_health",          // 15	defstale_health
+	"ms_v_tpms_alert_count",    // 16	StandardMetrics.ms_v_tpms_alert->GetSize()
 	"defstale_alert",           // 17	defstale_alert
 }
 
@@ -149,7 +149,7 @@ var metricsMap = map[string][]string{
 	"S": sMetrics,
 	"D": dMetrics,
 	"L": lMetrics,
-	"W": wMetrics,
+	"Y": yMetrics,
 }
 
 func fetch() []byte {
