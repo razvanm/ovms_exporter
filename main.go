@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,8 +18,8 @@ import (
 
 var (
 	addrFlag         = flag.String("addr", ":8080", "Address to listen on")
-	usernameFlag     = flag.String("username", "", "OVMS server username")
-	passwordFlag     = flag.String("password", "", "OVMS server password")
+	usernameFlag     = flag.String("username", os.Getenv("OVMS_USERNAME"), "OVMS server username")
+	passwordFlag     = flag.String("password", os.Getenv("OVMS_PASSWORD"), "OVMS server password")
 	vehicleIDFlag    = flag.String("vehicle", "", "OVMS server password")
 	ovmsSeverFlag    = flag.String("server", "api.openvehicles.com:6868", "OVMS server")
 	pollDurationFlag = flag.Duration("poll-duration", time.Minute, "How frequently to poll OVMS server")
@@ -161,7 +162,7 @@ func fetch() []byte {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		vlog.Errorf("Error reding the response for %q: %v", urlPrefix, err)
+		vlog.Errorf("Error reading the response for %q: %v", urlPrefix, err)
 		return nil
 	}
 
