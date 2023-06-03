@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"v.io/x/lib/vlog"
 )
 
@@ -236,11 +237,13 @@ func main() {
 		}
 	}()
 
-	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/metrics_ovms", func(w http.ResponseWriter, r *http.Request) {
 		mu.RLock()
 		m := metricsText
 		mu.RUnlock()
 		fmt.Fprintf(w, m)
 	})
+
+	http.Handle("/metrics", promhttp.Handler())
 	vlog.Fatal(http.ListenAndServe(*addrFlag, nil))
 }
