@@ -4,18 +4,25 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
-	"os"
+	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"v.io/x/lib/vlog"
 )
 
 var (
-	addrFlag   = flag.String("addr", ":8080", "Address to listen on")
-	filterFlag = flag.String("filter", "^v_b_12v_voltage$", "Regular expression to use for filtering the exported metrics")
+	addrFlag         = flag.String("addr", ":8080", "Address to listen on")
+	filterFlag       = flag.String("filter", "^v_b_12v_voltage$", "Regular expression to use for filtering the exported metrics")
+	usernameFlag     = flag.String("username", "", "OVMS server username")
+	passwordFlag     = flag.String("password", "", "OVMS server password")
+	vehicleIDFlag    = flag.String("vehicle", "", "OVMS server password")
+	ovmsSeverFlag    = flag.String("server", "api.openvehicles.com:6868", "OVMS server")
+	pollDurationFlag = flag.Duration("poll-duration", 20*time.Minute, "How frequently to poll OVMS server")
 )
 
 type record struct {
@@ -57,25 +64,36 @@ var dMetrics = normalize([]string{
 	"v.e.cabintemp",       //     21	Cabin temperature (celsius)
 })
 
-func main() {
-	flag.Parse()
-	vlog.ConfigureLibraryLoggerFromFlags()
-
-	b, err := os.ReadFile(flag.Arg(0))
+func fetch() []byte {
+	urlPrefix := fmt.Sprintf("http://%s/api/historical/%s/D", *ovmsSeverFlag, *vehicleIDFlag)
+	resp, err := http.Get(fmt.Sprintf("%s?username=%s&password=%s", urlPrefix, url.QueryEscape(*usernameFlag), url.QueryEscape(*passwordFlag)))
 	if err != nil {
-		vlog.Fatal(err)
+		vlog.Errorf("Error fetching %q: %v", urlPrefix, err)
 	}
 
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		vlog.Errorf("Error reding the response for %q: %v", urlPrefix, err)
+	}
+
+	return body
+}
+
+func fetchMetrics() string {
+	metrics := make(map[string][]string)
+
+	data := fetch()
 	records := []record{}
-	if err := json.Unmarshal(b, &records); err != nil {
-		vlog.Fatal(err)
+	if err := json.Unmarshal(data, &records); err != nil {
+		vlog.Errorf("JSON error unmashaling %q: ", string(data), err)
+		return ""
 	}
 
 	vlog.Infof("num records: %d", len(records))
 	filter := regexp.MustCompile(*filterFlag)
 	vlog.Infof("filter: %q", *filterFlag)
 
-	metrics := make(map[string][]string)
 	for _, rec := range records {
 		ts, err := time.ParseInLocation("2006-01-02 15:04:05", rec.Timestamp, time.UTC)
 		if err != nil {
@@ -92,13 +110,38 @@ func main() {
 		}
 	}
 
-	var all string
+	var r string
 	for m, s := range metrics {
-		all += fmt.Sprintf("# TYPE %s gauge\n%s\n", m, strings.Join(s, "\n"))
+		r += fmt.Sprintf("# TYPE %s gauge\n%s\n", m, strings.Join(s, "\n"))
 	}
+	return r
+}
+
+func main() {
+	flag.Parse()
+	vlog.ConfigureLibraryLoggerFromFlags()
+
+	var metricsText string
+	var mu sync.RWMutex
+
+	go func() {
+		for {
+			m := fetchMetrics()
+			if m != "" {
+				mu.Lock()
+				metricsText = m
+				mu.Unlock()
+			}
+			vlog.Infof("Sleep for %v...", *pollDurationFlag)
+			time.Sleep(*pollDurationFlag)
+		}
+	}()
 
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, all)
+		mu.RLock()
+		m := metricsText
+		mu.RUnlock()
+		fmt.Fprintf(w, m)
 	})
 	vlog.Fatal(http.ListenAndServe(*addrFlag, nil))
 }
