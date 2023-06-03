@@ -155,12 +155,14 @@ func fetch() []byte {
 	resp, err := http.Get(fmt.Sprintf("%s?username=%s&password=%s", urlPrefix, url.QueryEscape(*usernameFlag), url.QueryEscape(*passwordFlag)))
 	if err != nil {
 		vlog.Errorf("Error fetching %q: %v", urlPrefix, err)
+		return nil
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		vlog.Errorf("Error reding the response for %q: %v", urlPrefix, err)
+		return nil
 	}
 
 	return body
@@ -180,7 +182,7 @@ func fetchMetrics() string {
 	var metrics []string
 
 	data := fetch()
-	if len(data) == 0 {
+	if data == nil || len(data) == 0 {
 		return ""
 	}
 
